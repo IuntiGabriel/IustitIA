@@ -1,0 +1,9 @@
+Redactá un borrador jurídico para iniciar un proceso de sucesión en Argentina.
+
+Usá los siguientes datos:
+- Nombre del fallecido: {{nombre_fallecido}}
+- Fecha de fallecimiento: {{fecha_fallecimiento}}
+- Herederos: {{herederos}}
+- Domicilio: {{domicilio}}
+
+El texto debe estar en tono profesional y jurídico. No firmes el documento.
