@@ -1,0 +1,29 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Formulario de Sucesión</title>
+</head>
+<body>
+  <h2>Formulario de Iniciación de Sucesión</h2>
+  <form action="http://localhost:3000/cases" method="POST" enctype="multipart/form-data">
+    <label>Nombre del fallecido:</label><br>
+    <input type="text" name="nombre_fallecido" required><br><br>
+
+    <label>Fecha de fallecimiento:</label><br>
+    <input type="date" name="fecha_fallecimiento" required><br><br>
+
+    <label>Herederos (separados por coma):</label><br>
+    <input type="text" name="herederos" required><br><br>
+
+    <label>Domicilio:</label><br>
+    <input type="text" name="domicilio" required><br><br>
+
+    <label>Documentos (PDF, imágenes, etc.):</label><br>
+    <input type="file" name="documents" multiple><br><br>
+
+    <button type="submit">Enviar caso</button>
+  </form>
+</body>
+</html>
