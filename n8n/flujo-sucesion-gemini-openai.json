@@ -9,11 +9,7 @@
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [
-        100,
-        300
-      ],
-      "id": "2d6556e4-6aeb-4927-b089-4081395f32a7"
+      "position": [100, 300]
     },
     {
       "parameters": {
@@ -21,96 +17,97 @@
           "string": [
             {
               "name": "prompt",
-              "value": "Redactá un borrador de demanda de sucesión para el fallecido {{ $json.body.nombre_fallecido }} el día {{ $json.body.fecha_fallecimiento }} con herederos {{ $json.body.herederos }} y domicilio {{ $json.body.domicilio }}. El tono debe ser formal y jurídico, siguiendo la estructura legal argentina."
+              "value": "Redactá un borrador de demanda de sucesión para el fallecido {{ $json[\"nombre_fallecido\"] }} el día {{ $json[\"fecha_fallecimiento\"] }} con herederos {{ $json[\"herederos\"] }} y domicilio {{ $json[\"domicilio\"] }}. El tono debe ser formal y jurídico."
             }
           ]
-        },
-        "options": {}
+        }
       },
       "name": "Set Prompt",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
-      "position": [
-        300,
-        300
-      ],
-      "id": "e6a12b64-8898-4bfa-a36c-92131b74744d"
+      "position": [300, 300]
     },
     {
       "parameters": {
-        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={{ $credentials.GeminiAPI.apiKey }}",
+        "authentication": "none",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=TU_API_KEY",
         "options": {},
         "responseFormat": "json",
         "jsonParameters": true,
-        "bodyParametersJson": "{\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"{{ $json.prompt }}\"\n        }\n      ]\n    }\n  ]\n}"
+        "bodyParametersJson": "{\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"{{ $json[\\\"prompt\\\"] }}\"\n        }\n      ]\n    }\n  ]\n}"
       },
       "name": "Gemini Pro",
       "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [
-        500,
-        300
-      ],
-      "credentials": {
-        "geminiApi": {
-          "id": "GeminiAPI",
-          "name": "GeminiAPI"
-        }
-      },
-      "id": "401d670f-ac8d-4c3e-89da-5a1e2f69477e"
+      "typeVersion": 1,
+      "position": [500, 300]
     },
     {
       "parameters": {
-        "sourceFormat": "html",
-        "destinationFormat": "pdf",
-        "html": "<html>\n  <head>\n    <style>\n      body { font-family: 'Times New Roman', serif; margin: 40px; line-height: 1.6; }\n      h1 { text-align: center; border-bottom: 1px solid #000; padding-bottom: 10px; font-size: 18px; }\n      .firma { margin-top: 60px; }\n      p { margin-bottom: 12px; }\n    </style>\n  </head>\n  <body>\n    <h1>BORRADOR JURÍDICO DE SUCESIÓN</h1>\n    <p><strong>Causante (fallecido):</strong> {{ $json.body.nombre_fallecido }}</p>\n    <p><strong>Fecha de fallecimiento:</strong> {{ $json.body.fecha_fallecimiento }}</p>\n    <p><strong>Último domicilio del causante:</strong> {{ $json.body.domicilio }}</p>\n    <p><strong>Herederos denunciados:</strong> {{ $json.body.herederos }}</p>\n    <hr>\n    <div>\n      {{ $node[\"Gemini Pro\"].json.candidates[0].content.parts[0].text }}\n    </div>\n    <div class=\"firma\">\n      <p>___________________________</p>\n      <p>Firma Profesional</p>\n    </div>\n  </body>\n</html>",
-        "options": {
-          "pageSize": "A4"
+        "values": {
+          "string": [
+            {
+              "name": "html",
+              "value": "<html>\n  <head>\n    <style>\n      body { font-family: 'Times New Roman'; margin: 40px; line-height: 1.6; }\n      h1 { text-align: center; border-bottom: 1px solid #000; padding-bottom: 10px; }\n      .firma { margin-top: 60px; }\n    </style>\n  </head>\n  <body>\n    <h1>Borrador Jurídico de Sucesión</h1>\n    <p><strong>Fallecido:</strong> {{ $json[\"nombre_fallecido\"] }}</p>\n    <p><strong>Fecha de fallecimiento:</strong> {{ $json[\"fecha_fallecimiento\"] }}</p>\n    <p><strong>Domicilio:</strong> {{ $json[\"domicilio\"] }}</p>\n    <p><strong>Herederos:</strong> {{ $json[\"herederos\"] }}</p>\n    <hr>\n    <div>\n      {{ $node[\"Gemini Pro\"].json[\"candidates\"][0][\"content\"][\"parts\"][0][\"text\"] }}\n    </div>\n    <div class=\"firma\">\n      <p>___________________________</p>\n      <p>Firma Profesional</p>\n    </div>\n  </body>\n</html>"
+            }
+          ]
         }
       },
-      "name": "Convertir a PDF",
-      "type": "n8n-nodes-base.convert",
+      "name": "Set HTML",
+      "type": "n8n-nodes-base.set",
       "typeVersion": 1,
-      "position": [
-        700,
-        300
-      ],
-      "id": "703d1680-1a1a-45c5-9240-a15a840e5509"
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "fileName": "borrador_sucesion.html",
+        "dataPropertyName": "html",
+        "mimeType": "text/html"
+      },
+      "name": "Crear archivo HTML",
+      "type": "n8n-nodes-base.moveBinaryData",
+      "typeVersion": 1,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "TU_CORREO@gmail.com",
+        "toEmail": "ABOGADO_DESTINO@gmail.com",
+        "subject": "Nuevo borrador de demanda generado por IA",
+        "text": "Se adjunta el archivo borrador_sucesion.html con el texto generado automáticamente. Por favor, revise y continúe con el proceso.",
+        "attachments": [
+          {
+            "binaryPropertyName": "data"
+          }
+        ]
+      },
+      "name": "Send Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [1100, 300],
+      "credentials": {
+        "smtp": {
+          "id": "smtp_gmail",
+          "name": "SMTP Gmail"
+        }
+      }
     }
   ],
   "connections": {
     "Webhook": {
-      "main": [
-        [
-          {
-            "node": "Set Prompt",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+      "main": [[{ "node": "Set Prompt", "type": "main", "index": 0 }]]
     },
     "Set Prompt": {
-      "main": [
-        [
-          {
-            "node": "Gemini Pro",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+      "main": [[{ "node": "Gemini Pro", "type": "main", "index": 0 }]]
     },
     "Gemini Pro": {
-      "main": [
-        [
-          {
-            "node": "Convertir a PDF",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+      "main": [[{ "node": "Set HTML", "type": "main", "index": 0 }]]
+    },
+    "Set HTML": {
+      "main": [[{ "node": "Crear archivo HTML", "type": "main", "index": 0 }]]
+    },
+    "Crear archivo HTML": {
+      "main": [[{ "node": "Send Email", "type": "main", "index": 0 }]]
     }
-  }
+  },
+  "active": false
 }

@@ -1,0 +1,198 @@
+{
+  "name": "IustitIA Sucesión - Estable",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "flujo-sucesion"
+      },
+      "id": "Webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "nombre_fallecido",
+              "value": "={{$json[\"body\"][\"nombre_fallecido\"]}}"
+            },
+            {
+              "name": "fecha_fallecimiento",
+              "value": "={{$json[\"body\"][\"fecha_fallecimiento\"]}}"
+            },
+            {
+              "name": "domicilio",
+              "value": "={{$json[\"body\"][\"domicilio\"]}}"
+            },
+            {
+              "name": "herederos",
+              "value": "={{$json[\"body\"][\"herederos\"]}}"
+            }
+          ]
+        }
+      },
+      "id": "SetDatos",
+      "name": "Set Datos",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Redactá un borrador de demanda de sucesión para el fallecido {{$json[\"nombre_fallecido\"]}} el día {{$json[\"fecha_fallecimiento\"]}} con herederos {{$json[\"herederos\"]}} y domicilio {{$json[\"domicilio\"]}}. El tono debe ser formal y jurídico."
+      },
+      "id": "AI Agent",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-1.5-flash"
+      },
+      "id": "Gemini",
+      "name": "Google Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [580, 300],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "tu-id-api",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "append"
+      },
+      "id": "Merge",
+      "name": "Merge Datos + IA",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 1,
+      "position": [750, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "const { nombre_fallecido, fecha_fallecimiento, domicilio, herederos, text } = $json;\nconst html = `<!DOCTYPE html>\n<html>\n  <head>\n    <style>\n      body { font-family: 'Times New Roman'; margin: 40px; line-height: 1.6; }\n      h1 { text-align: center; border-bottom: 1px solid #000; padding-bottom: 10px; }\n      .firma { margin-top: 60px; }\n    </style>\n  </head>\n  <body>\n    <h1>Borrador Jurídico de Sucesión</h1>\n    <p><strong>Fallecido:</strong> ${nombre_fallecido}</p>\n    <p><strong>Fecha de fallecimiento:</strong> ${fecha_fallecimiento}</p>\n    <p><strong>Domicilio:</strong> ${domicilio}</p>\n    <p><strong>Herederos:</strong> ${herederos}</p>\n    <hr>\n    <div>${text}</div>\n    <div class=\"firma\">\n      <p>___________________________</p>\n      <p>Firma Profesional</p>\n    </div>\n  </body>\n</html>`;\n\nreturn [\n  {\n    binary: {\n      data: {\n        data: Buffer.from(html).toString('base64'),\n        mimeType: 'text/html',\n        fileName: 'borrador_sucesion.html'\n      }\n    }\n  }\n];"
+      },
+      "id": "Generar HTML",
+      "name": "Generar archivo HTML",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [950, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "gabrieliunti@hospitalposadas.gov.ar",
+        "toEmail": "iuntigabriel@gmail.com",
+        "subject": "Nuevo borrador de demanda generado por IA",
+        "text": "Se adjunta el archivo borrador_sucesion.html con el texto generado automáticamente. Por favor, revise y continúe con el proceso.",
+        "attachments": [
+          {
+            "binaryPropertyName": "data"
+          }
+        ]
+      },
+      "id": "Send Email",
+      "name": "Enviar Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [1150, 300],
+      "credentials": {
+        "smtp": {
+          "id": "tu-smtp-id",
+          "name": "SMTP account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Set Datos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Datos": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Google Gemini Chat Model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "ai_languageModel": [
+        [
+          {
+            "node": "Google Gemini Chat Model",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Generar HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generar HTML": {
+      "main": [
+        [
+          {
+            "node": "Enviar Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
